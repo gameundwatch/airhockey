@@ -28,7 +28,8 @@ void Main()
 	// パック
 	Circle Pack(400, 300, 10);
 	// 速さ
-	double speed = 40.0;
+	double speed = 10.0;
+	double cursor_speed = 0;
 		// 速度
 	Vec2 PackVelocity(0, speed);
 
@@ -78,12 +79,12 @@ void Main()
 		}
 
 		if (Paddle_Blue.intersects(Pack) && Zone_Blue.contains(Paddle_Blue)) {
-			PackVelocity.x = (Pack.x - Paddle_Blue.x) * speed;
-			PackVelocity.y = (Pack.y - Paddle_Blue.y) * speed;
+			PackVelocity.x = (Pack.x - Paddle_Blue.x) * (Cursor::Delta().x * Cursor::Delta().y + speed);
+			PackVelocity.y = (Pack.y - Paddle_Blue.y) * (Cursor::Delta().x * Cursor::Delta().y + speed);
 		}
 		if (Paddle_Red.intersects(Pack) && Zone_Red.contains(Paddle_Red)) {
-			PackVelocity.x = (Pack.x - Paddle_Red.x) * speed;
-			PackVelocity.y = (Pack.y - Paddle_Red.y) * speed;
+			PackVelocity.x = (Pack.x - Paddle_Red.x) * (Cursor::Delta().x * Cursor::Delta().y + speed);
+			PackVelocity.y = (Pack.y - Paddle_Red.y) * (Cursor::Delta().x * Cursor::Delta().y + speed);
 		}
 
 		Pack.draw(Palette::White).drawFrame(2, 0, Palette::Orange);
