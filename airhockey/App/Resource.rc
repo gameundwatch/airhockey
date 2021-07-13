@@ -57,7 +57,9 @@ Resource(engine/soundfont/GMGSx.sf2.zstdcmp)
 //
 //////////////////////////////////////////////////////
 
-
+Resource(sounds/bounce.wav)
+Resource(sounds/hit.wav)
+Resource(sounds/goal.wav)
 
 /* 
 	//
