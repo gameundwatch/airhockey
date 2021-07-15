@@ -18,8 +18,8 @@ void Main()
 	Rect Zone_Red(210, 50, 380, 250);
 	Rect Zone_Blue(210, 300, 380, 250);
 	// ゴール
-	Line Goal_Red(300, 40, 500, 40);
-	Line Goal_Blue(300, 560, 500, 560);
+	Line Goal_Red(300, 50, 500, 50);
+	Line Goal_Blue(300, 550, 500, 550);
 
 	// パドル
 	bool grab = false;
@@ -33,7 +33,7 @@ void Main()
 	Circle grabRange(400, 300, 50);
 
 	// 速さ
-	double speed = 20.0;
+	double speed = 10.0;
 	// 速度
 	Vec2 PackVelocity(40 , 40);
 
@@ -58,7 +58,7 @@ void Main()
 		score(score_Red).drawAt({700,100}, Palette::Black);
 		score(score_Blue).drawAt({700,500}, Palette::Black);
 
-		Stage.draw(Palette::White).drawFrame(4, 8, Palette::Darkgray);
+		Stage.draw(Palette::White).drawFrame(0, 8, Palette::Darkgray);
 
 		Zone_Red.draw(Palette::Lightpink);
 		Zone_Blue.draw(Palette::Lightblue);
@@ -70,31 +70,45 @@ void Main()
 		// 可動域外でパドルが消えるように
 		if (Zone_Blue.contains(Paddle_Blue))
 		{
+			if (!grab)
+			{
+				Paddle_Blue.movedBy(2,2).drawShadow(Vec2(0, 0), 12, 0, ColorF(0.0, 1));
+			}
 			Paddle_Blue.draw().drawFrame(8, 0, Palette::Cadetblue);
 		}
 
 		Paddle_Red.draw().drawFrame(8, 0, Palette::Palevioletred);
 
 		// パックの動作
+
+		ClearPrint();
+		Print << Pack;
+		Print << PackVelocity;
+		PackVelocity.x = Clamp(PackVelocity.x, -5000.0, 5000.0);
+		PackVelocity.y = Clamp(PackVelocity.y, -5000.0, 5000.0);
+
 		Pack.moveBy(PackVelocity * Scene::DeltaTime());
 
 		// 壁との衝突
-		if (Pack.y < 60 && PackVelocity.y < 0)
+		Pack.x = Clamp(Pack.x, 220.0, 580.0);
+		Pack.y = Clamp(Pack.y, 60.0, 540.0);
+
+		if (Pack.y <= 60 && PackVelocity.y < 0)
 		{
 			audio_Bounce.playOneShot();
 			PackVelocity.y *= -1;
 		}
-		if (Pack.y > 540 && PackVelocity.y > 0)
+		if (Pack.y >= 540 && PackVelocity.y > 0)
 		{
 			audio_Bounce.playOneShot();
 			PackVelocity.y *= -1;
 		}
-		if (Pack.x < 220 && PackVelocity.x < 0)
+		if (Pack.x <= 220 && PackVelocity.x < 0)
 		{
 			audio_Bounce.playOneShot();
 			PackVelocity.x *= -1;
 		}
-		if (Pack.x > 580 && PackVelocity.x > 0)
+		if (Pack.x >= 580 && PackVelocity.x > 0)
 		{
 			audio_Bounce.playOneShot();
 			PackVelocity.x *= -1;
@@ -120,7 +134,7 @@ void Main()
 		}
 
 		// 掴み
-		if (grabbedPack)
+		if (grabbedPack && 220 < Pack.x && Pack.x < 580 && 60 < Pack.y)
 		{
 			PackVelocity.x = 0;
 			PackVelocity.y = 0;
@@ -157,7 +171,7 @@ void Main()
 			audio_Goal.playOneShot();
 			score_Blue += 1;
 			Pack.setPos(400,200);
-			PackVelocity.set(-40, -40);
+			PackVelocity.set(Random(-40, 40), -40);
 		}
 
 		// 赤の得点
@@ -165,7 +179,7 @@ void Main()
 			audio_Goal.playOneShot();
 			score_Red += 1;
 			Pack.setPos(400, 400);
-			PackVelocity.set(40, 40);
+			PackVelocity.set(Random(-40,40), 40);
 		}
 
 		// 敵のAI
