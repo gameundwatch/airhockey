@@ -1,5 +1,6 @@
 ﻿
 # include <Siv3D.hpp> // OpenSiv3D v0.4.3
+# include <cmath>
 
 void Main()
 {
@@ -11,21 +12,26 @@ void Main()
 	int score_Red	= 0;
 	int score_Blue	= 0;
 
-	Rect Stage(200, 0, 400, 600);
+	Rect Stage(200, 40, 400, 520);
 
 	//パドルの可動域
-	Rect Zone_Red(210, 10, 380, 280);
-	Rect Zone_Blue(210, 310, 380, 280);
+	Rect Zone_Red(210, 50, 380, 250);
+	Rect Zone_Blue(210, 300, 380, 250);
 	// ゴール
-	Line Goal_Red(300, 10, 500, 10);
-	Line Goal_Blue(300, 590, 500, 590);
+	Line Goal_Red(300, 40, 500, 40);
+	Line Goal_Blue(300, 560, 500, 560);
 
 	// パドル
+	bool grab = false;
 	Circle Paddle_Red(400, 40, 25);
 	Circle Paddle_Blue(400, 560, 25);
 
 	// パック
+	bool collision = false;
+	bool grabbedPack = false;
 	Circle Pack(400, 300, 20);
+	Circle grabRange(400, 300, 50);
+
 	// 速さ
 	double speed = 20.0;
 	// 速度
@@ -35,6 +41,13 @@ void Main()
 	const Audio audio_Hit(U"sounds/hit.wav");
 	const Audio audio_Bounce(U"sounds/bounce.wav");
 	const Audio audio_Goal(U"sounds/goal.wav");
+
+	// 敵
+	double level = 0;
+	double delta_x = 0;
+	double delta_y = 0;
+	double move_x = 0;
+	double move_y = 0;
 
 	const double deltaTime = Scene::DeltaTime();
 
@@ -52,7 +65,7 @@ void Main()
 		Goal_Red.draw(10, Palette::Red);
 		Goal_Blue.draw(10, Palette::Blue);
 
-		Paddle_Blue.setPos(Cursor::Pos());
+		Pack.draw(Palette::White).drawFrame(2, 0, Palette::Orange);
 
 		// 可動域外でパドルが消えるように
 		if (Zone_Blue.contains(Paddle_Blue))
@@ -66,12 +79,12 @@ void Main()
 		Pack.moveBy(PackVelocity * Scene::DeltaTime());
 
 		// 壁との衝突
-		if (Pack.y < 20 && PackVelocity.y < 0 )
+		if (Pack.y < 60 && PackVelocity.y < 0)
 		{
 			audio_Bounce.playOneShot();
 			PackVelocity.y *= -1;
 		}
-		if (Pack.y > 580 && PackVelocity.y > 0)
+		if (Pack.y > 540 && PackVelocity.y > 0)
 		{
 			audio_Bounce.playOneShot();
 			PackVelocity.y *= -1;
@@ -87,19 +100,57 @@ void Main()
 			PackVelocity.x *= -1;
 		}
 
-		// パックとパドルの衝突
-		if (Paddle_Blue.intersects(Pack) && Zone_Blue.contains(Paddle_Blue)) {
-			audio_Hit.playOneShot();
-			PackVelocity.x = (Pack.x - Paddle_Blue.x) * (Cursor::Delta().x * Cursor::Delta().y + speed);
-			PackVelocity.y = (Pack.y - Paddle_Blue.y) * (Cursor::Delta().x * Cursor::Delta().y + speed);
+		// パドルの動作
+		Paddle_Blue.setPos(Cursor::Pos());
+		grabRange.setPos(Cursor::Pos());
+
+		if (MouseL.pressed()) 
+		{
+			grab = true;
 		}
-		if (Paddle_Red.intersects(Pack) && Zone_Red.contains(Paddle_Red)) {
-			audio_Hit.playOneShot();
-			PackVelocity.x = (Pack.x - Paddle_Red.x) * ((Pack.x - Paddle_Red.x) * 0.1 * (Pack.y - Paddle_Red.y) * 0.1 + speed);
-			PackVelocity.y = (Pack.y - Paddle_Red.y) * ((Pack.x - Paddle_Red.x) * 0.1 * (Pack.y - Paddle_Red.y) * 0.1 + speed);
+		else if (MouseL.up())
+		{
+			grab = false;
 		}
 
-		Pack.draw(Palette::White).drawFrame(2, 0, Palette::Orange);
+
+		if (MouseL.down() && Paddle_Blue.intersects(Pack) && Zone_Blue.contains(Paddle_Blue))
+		{
+			grabbedPack = true;
+		}
+
+		// 掴み
+		if (grabbedPack)
+		{
+			PackVelocity.x = 0;
+			PackVelocity.y = 0;
+			Pack.moveBy(Cursor::Delta());
+		}
+
+		if (grab)
+		{
+			// パックとパドルの衝突
+			if ((Paddle_Blue.intersects(Pack) && Zone_Blue.contains(Paddle_Blue)) && !grabbedPack)
+			{
+				collision = true;
+			}
+			else
+			{
+				collision = false;
+			}
+		}
+		else
+		{
+			grabbedPack = false;
+		}
+
+		// 衝突
+		if (collision)
+		{
+			audio_Hit.playOneShot();
+			PackVelocity.x = (Pack.x - Paddle_Blue.x) * (Cursor::Delta().x * Cursor::Delta().x + speed);
+			PackVelocity.y = (Pack.y - Paddle_Blue.y) * (Cursor::Delta().y * Cursor::Delta().y + speed);
+		}
 
 		// 青の得点
 		if (Goal_Red.intersects(Pack)) {
@@ -119,12 +170,24 @@ void Main()
 
 		// 敵のAI
 
+		level = 0.01;
+		delta_x = Pack.x - Paddle_Red.x;
+		delta_y = Pack.y - Paddle_Red.y;
+		move_x = delta_x * level;
+		move_y = delta_y * level;
+
+		if (Paddle_Red.intersects(Pack) && Zone_Red.contains(Paddle_Red)) {
+			audio_Hit.playOneShot();
+			PackVelocity.x = delta_x * (move_x * move_x * level + speed);
+			PackVelocity.y = delta_y * (move_y * move_y * level + speed);
+		}
+
 		if (Zone_Red.contains(Pack)) {
-			Paddle_Red.moveBy((Pack.x - Paddle_Red.x) * 0.1, (Pack.y - Paddle_Red.y) * 0.1);
+			Paddle_Red.moveBy(delta_x * 0.1, delta_y * level);
 		}
 		else
 		{
-			Paddle_Red.moveBy((400 - Paddle_Red.x) * 0.01, (100 - Paddle_Red.y) * 0.01);
+			Paddle_Red.moveBy((400 - Paddle_Red.x) * level, (100 - Paddle_Red.y) * level);
 		}
 
 		// [A] キーが押されたら
