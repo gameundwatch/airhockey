@@ -58,22 +58,22 @@ void Main()
 		score(score_Red).drawAt({700,100}, Palette::Black);
 		score(score_Blue).drawAt({700,500}, Palette::Black);
 
-		Stage.draw(Palette::White).drawFrame(5, 0, Palette::Darkgray);
+		Stage.draw(Palette::White).drawFrame(4, 8, Palette::Darkgray);
 
 		Zone_Red.draw(Palette::Lightpink);
 		Zone_Blue.draw(Palette::Lightblue);
 		Goal_Red.draw(10, Palette::Red);
 		Goal_Blue.draw(10, Palette::Blue);
 
-		Pack.draw(Palette::White).drawFrame(2, 0, Palette::Orange);
+		Pack.draw(Palette::White).drawFrame(4, 0, Palette::Orange);
 
 		// 可動域外でパドルが消えるように
 		if (Zone_Blue.contains(Paddle_Blue))
 		{
-			Paddle_Blue.draw().drawFrame(2, 0, Palette::Cadetblue);
+			Paddle_Blue.draw().drawFrame(8, 0, Palette::Cadetblue);
 		}
 
-		Paddle_Red.draw().drawFrame(2, 0, Palette::Palevioletred);
+		Paddle_Red.draw().drawFrame(8, 0, Palette::Palevioletred);
 
 		// パックの動作
 		Pack.moveBy(PackVelocity * Scene::DeltaTime());
@@ -127,7 +127,7 @@ void Main()
 			Pack.moveBy(Cursor::Delta());
 		}
 
-		if (grab)
+		if (grab && Zone_Blue.contains(Paddle_Blue) )
 		{
 			// パックとパドルの衝突
 			if ((Paddle_Blue.intersects(Pack) && Zone_Blue.contains(Paddle_Blue)) && !grabbedPack)
