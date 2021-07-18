@@ -7,6 +7,12 @@ void Main()
 	// 背景を水色にする
 	Scene::SetBackground(Palette::Lawngreen);
 
+	// ゲーム状態
+
+	bool isPackOn = false;
+	const Font press(40);
+	const Font gui(20);
+
 	// スコア
 	const Font score(60);
 	int score_Red	= 0;
@@ -23,8 +29,8 @@ void Main()
 
 	// パドル
 	bool grab = false;
-	Circle Paddle_Red(400, 40, 25);
-	Circle Paddle_Blue(400, 560, 25);
+	Circle Paddle_Red(400, 100, 25);
+	Circle Paddle_Blue(400, 500, 25);
 
 	// パック
 	bool collision = false;
@@ -33,7 +39,7 @@ void Main()
 	Circle grabRange(400, 300, 50);
 
 	// 速さ
-	double speed = 10.0;
+	double speed = 20.0;
 	// 速度
 	Vec2 PackVelocity(40 , 40);
 
@@ -53,6 +59,47 @@ void Main()
 
 	while (System::Update())
 	{
+
+		if (!isPackOn)
+		{
+
+			score(score_Red).drawAt({ 700,100 }, Palette::Black);
+			score(score_Blue).drawAt({ 700,500 }, Palette::Black);
+
+			Stage.draw(Palette::White).drawFrame(0, 8, Palette::Darkgray);
+
+			Zone_Red.draw(Palette::Lightpink);
+			Zone_Blue.draw(Palette::Lightblue);
+			Goal_Red.draw(10, Palette::Red);
+			Goal_Blue.draw(10, Palette::Blue);
+
+			Pack.draw(Palette::White).drawFrame(4, 0, Palette::Orange);
+			Paddle_Blue.setPos(Cursor::Pos());
+			if (Zone_Blue.contains(Paddle_Blue))
+			{
+				Paddle_Blue.movedBy(2, 2).drawShadow(Vec2(0, 0), 12, 0, ColorF(0.0, 1));
+				Paddle_Blue.draw().drawFrame(8, 0, Palette::Cadetblue);
+			}
+			Paddle_Red.draw().drawFrame(8, 0, Palette::Palevioletred);
+
+			press(U"LEFT CLICK TO START.").drawAt(Scene::Center(), ColorF(0.2, 0.2, 0.2, 0.5 + Periodic::Sine0_1(1s) * 0.5));
+
+			gui(U"ENEMY LEVEL").draw(10, 180, Palette::Black);
+			SimpleGUI::Slider(level, 0.01, 0.2, Vec2(10, 220));
+
+			if (SimpleGUI::Button(U"Reset", Vec2(50, 500)))
+			{
+				// Move the cat's coordinates to a random position in the screen
+				score_Blue = 0;
+				score_Red = 0;
+			}
+
+			if (MouseL.down() && Zone_Blue.contains(Paddle_Blue)) {
+				isPackOn = true;
+			}
+
+			continue;
+		}
 
 		// テキストを画面の中心に描く
 		score(score_Red).drawAt({700,100}, Palette::Black);
@@ -82,8 +129,6 @@ void Main()
 		// パックの動作
 
 		ClearPrint();
-		Print << Pack;
-		Print << PackVelocity;
 		PackVelocity.x = Clamp(PackVelocity.x, -5000.0, 5000.0);
 		PackVelocity.y = Clamp(PackVelocity.y, -5000.0, 5000.0);
 
@@ -116,7 +161,6 @@ void Main()
 
 		// パドルの動作
 		Paddle_Blue.setPos(Cursor::Pos());
-		grabRange.setPos(Cursor::Pos());
 
 		if (MouseL.pressed()) 
 		{
@@ -170,6 +214,7 @@ void Main()
 		if (Goal_Red.intersects(Pack)) {
 			audio_Goal.playOneShot();
 			score_Blue += 1;
+			isPackOn = false;
 			Pack.setPos(400,200);
 			PackVelocity.set(Random(-40, 40), -40);
 		}
@@ -178,13 +223,12 @@ void Main()
 		if (Goal_Blue.intersects(Pack)) {
 			audio_Goal.playOneShot();
 			score_Red += 1;
+			isPackOn = false;
 			Pack.setPos(400, 400);
 			PackVelocity.set(Random(-40,40), 40);
 		}
 
 		// 敵のAI
-
-		level = 0.01;
 		delta_x = Pack.x - Paddle_Red.x;
 		delta_y = Pack.y - Paddle_Red.y;
 		move_x = delta_x * level;
